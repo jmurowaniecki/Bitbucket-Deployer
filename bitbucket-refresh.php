@@ -71,6 +71,13 @@ class Bitbucket
             ? "cd $this->repository; git reset --hard HEAD; git pull origin $this->branch"
             : "git clone $this->protocol$this->username:$this->password@$this->url/$this->username/$this->repository", $output);
 
+        // $output = is_array($output)
+        //     ? print_r($output, TRUE)
+        //     : ( is_string($output)
+        //         ? $output
+        //         : 'Insuportable output'
+        //         );
+
         return $this->send(json_encode(array(
             'code'    => 1,
             'error'   => TRUE,
@@ -87,6 +94,12 @@ class Bitbucket
             : $this->repository;
         return $this;
     }
+
+    public function callback($script = FALSE)
+    {
+        exec("cd $this->repository; if [ -e \"$script\" ]; then sh \"$script\"; fi");
+        return $this;
+    }
 }
 
 $service = new Bitbucket();
@@ -96,7 +109,8 @@ $service
         'password'   => 'yourpassword',
         'branch'     => 'master'
     ))
-    ->deploy();
+    ->deploy()
+    ->callback('deploy.sh');
 /*
  * If you want to test using some repository
 $service
