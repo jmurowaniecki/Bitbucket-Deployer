@@ -8,6 +8,7 @@ class Bitbucket
     var $branch     = NULL;
     var $payload    = FALSE;
     var $repository = FALSE;
+    var $output     = array();
 
     public function __construct($repository = FALSE, $branch = 'master', $payload = FALSE)
     {
@@ -45,7 +46,7 @@ class Bitbucket
         return $this;
     }
 
-    public function deploy()
+    public function deploy($output = NULL)
     {
         if ( ! $this->hasPayload())
         {
@@ -65,23 +66,18 @@ class Bitbucket
             )), 400, 'Bad Request');
         }
 
-        $output = NULL;
-
-        exec($action = is_dir("./$this->repository")
+        $output = shell_exec($action = is_dir("./$this->repository")
             ? "cd $this->repository; git reset --hard HEAD; git pull origin $this->branch"
-            : "git clone $this->protocol$this->username:$this->password@$this->url/$this->username/$this->repository", $output);
+            : "git clone $this->protocol$this->username:$this->password@$this->url/$this->username/$this->repository");
 
-        // $output = is_array($output)
-        //     ? print_r($output, TRUE)
-        //     : ( is_string($output)
-        //         ? $output
-        //         : 'Insuportable output'
-        //         );
+        $this->output [] = array(
+            $action => $output
+        );
 
         return $this->send(json_encode(array(
             'code'    => 1,
             'error'   => TRUE,
-            'message' => "'$action' returns '$output'"
+            'message' => 'Everything updated'
         )), 200, 'Acepted');
     }
 
@@ -95,14 +91,64 @@ class Bitbucket
         return $this;
     }
 
-    public function callback($script = FALSE)
+    private function execute($command = FALSE, $output = NULL)
     {
-        exec("cd $this->repository; if [ -e \"$script\" ]; then sh \"$script\"; fi");
+        exec($command, $output);
+        $this->output [] = $output;
+        return $this;
+    }
+
+    public function callback($script = FALSE, $output = NULL)
+    {
+        exec("cd $this->repository; if [ -e \"$script\" ]; then sh \"$script\"; fi", $output);
+        $this->output [] = $output;
+        return $this;
+    }
+
+    private function process_output($node = FALSE)
+    {
+        $message = array();
+        $tx = $node
+            ? $node
+            : $this->output;
+
+        $tx = ! is_array($tx)
+            ? array($tx)
+            : $tx;
+
+        foreach ($tx as $label => $desc)
+        {
+            if ( ! is_numeric($label) )
+            {
+                $message [] = "exec> $label";
+            }
+            $message [] = is_array($desc)
+                ? $this->process_output($desc)
+                : $desc;
+        }
+        $message = implode("\n", $message);
+        return $node
+            ? $message
+            : $this->send_output($message);
+    }
+
+    private function send_output($output)
+    {
+        $output = (file_exists($file = 'bitbucket-refresh.log')
+            ? "\n"
+            : NULL) . date('Ymd His') . "\n$output\n---\n";
+        file_put_contents($file, $output, FILE_APPEND);
+    }
+
+    public function log($actions = FALSE)
+    {
+        $this->process_output();
         return $this;
     }
 }
 
 $service = new Bitbucket();
+
 $service
     ->configure(array(
         'username'   => 'yourusername',
@@ -110,16 +156,18 @@ $service
         'branch'     => 'master'
     ))
     ->deploy()
-    ->callback('deploy.sh');
-/*
- * If you want to test using some repository
-$service
-    ->configure(array(
-        'username'   => 'yourusername',
-        'password'   => 'yourpassword',
-        'branch'     => 'master'
-    ))
-    ->simulate('repositoryname') // put here the name of your repository
-    ->deploy();
- */
+    ->callback('deploy.sh')
+    ->log();
+
+// If you want to test using some repository
+// $service
+//     ->configure(array(
+//         'username'   => 'yourusername',
+//         'password'   => 'yourpassword',
+//         'branch'     => 'master'
+//     ))
+//     ->simulate('repositoryname') // put here the name of your repository
+//     ->deploy()
+//     ->log();
+
 ?>
