@@ -123,9 +123,12 @@ class Bitbucket
             {
                 $message [] = "exec> $label";
             }
-            $message [] = is_array($desc)
-                ? $this->process_output($desc)
-                : $desc;
+            if ( ! empty($desc))
+            {
+                $message [] = is_array($desc)
+                    ? $this->process_output($desc)
+                    : $desc;
+            }
         }
         $message = implode("\n", $message);
         return $node
