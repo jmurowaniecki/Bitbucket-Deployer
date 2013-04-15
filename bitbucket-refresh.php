@@ -74,9 +74,7 @@ class Bitbucket
             ? "cd $this->repository; git reset --hard HEAD; git pull origin $this->branch"
             : "git clone $this->protocol$this->username:$this->password@$this->url/$this->username/$this->repository");
 
-        $this->output [] = array(
-            $action => $output
-        );
+        $this->output[$action] = $output;
 
         return $this->send(json_encode(array(
             'code'    => 1,
@@ -96,17 +94,16 @@ class Bitbucket
         return $this;
     }
 
-    private function execute($command = FALSE, $output = NULL)
+    private function execute($command = FALSE)
     {
-        exec($command, $output);
-        $this->output [] = $output;
+        $this->output[$command] = shell_exec($command);
         return $this;
     }
 
-    public function callback($script = FALSE, $output = NULL)
+    public function callback($script = FALSE)
     {
-        exec("cd $this->repository; if [ -e \"$script\" ]; then sh \"$script\"; fi", $output);
-        $this->output [] = $output;
+        $output = shell_exec($command = "cd $this->repository; if [ -e \"$script\" ]; then sh \"$script\"; fi");
+        $this->output[$command] = $output;
         return $this;
     }
 
@@ -142,7 +139,7 @@ class Bitbucket
 
     private function send_output($output)
     {
-        $output = (file_exists($file = 'bitbucket-refresh.log')
+        $this->output = $output = (file_exists($file = 'bitbucket-refresh.log')
             ? "\n"
             : NULL) . date('Ymd His') . "\n$output\n---\n";
         file_put_contents($file, $output, FILE_APPEND);
@@ -151,6 +148,52 @@ class Bitbucket
     public function log($actions = FALSE)
     {
         $this->process_output();
+        return $this;
+    }
+
+    public function mail($emails = array(), $subject = 'BitBucket Update Service', $from = 'service@bitbucket-refresher', $template = 'bitbucket-template.html')
+    {
+        $to = is_array($emails)
+            ? implode(', ', $emails)
+            : ( is_string($emails)
+                ? $emails
+                : FALSE );
+
+        $fields = array(
+            'date'       => date('H:i:s d/m/Y'),
+            'repository' => $this->repository,
+            'commands'   => $this->output
+        );
+
+        $message = $template = file_get_contents($template);
+
+        foreach ($fields as $field => $value)
+        {
+            if ( ! is_array($value))
+            {
+                $message = str_replace('{{' . "$field}}", $value, $message);
+            }
+            else if (strpos($message, "{{$field}}") && strpos($message, "{{/$field}}"))
+            {
+                $part   = explode('{{' . "$field}}", $message);
+                $block  = explode('{{/' . "$field}}", $part[1]);
+                $part   = array($part[0], $block[1]);
+                $block  = $block[0];
+                $blocks = array();
+
+                foreach ($value as $command => $output)
+                {
+                    $blocks [] = str_replace(array('{{command}}', '{{output}}'), array($command, $output), $block);
+                }
+
+                $message = $part[0] . implode("\n", $blocks) . $part[1];
+            }
+        }
+
+        mail($to, $subject, $message, "MIME-Version: 1.0\r\n" .
+            "Content-type: text/html; charset=utf-8\r\n" .
+            "To: $to\r\nFrom: $from\r\n");
+
         return $this;
     }
 
@@ -168,35 +211,12 @@ class Bitbucket
 }
 
 $service = new Bitbucket();
-
-// Using some json file to configure
 $service
-    ->autoconfigure('bitbucket-userdata.json') // or just ->configure('filename.json')
-    ->simulate('joy')
+    ->autoconfigure('bitbucket-userdata.json')
     ->deploy()
     ->callback('deploy.sh')
+    ->mail(array(
+        'your@email.com'
+    ), 'Repository changes', 'service@somehost', 'bitbucket-template.html')
     ->log();
-
-// Standart/manual configuration
-// $service
-//     ->configure(array(
-//         'username'   => 'yourusername',
-//         'password'   => 'yourpassword',
-//         'branch'     => 'master'
-//     ))
-//     ->deploy()
-//     ->callback('deploy.sh')
-//     ->log();
-
-// If you want to test using some repository
-// $service
-//     ->configure(array(
-//         'username'   => 'yourusername',
-//         'password'   => 'yourpassword',
-//         'branch'     => 'master'
-//     ))
-//     ->simulate('repositoryname') // put here the name of your repository
-//     ->deploy()
-//     ->log();
-
 ?>
