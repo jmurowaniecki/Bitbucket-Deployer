@@ -36,7 +36,11 @@ class Bitbucket
 
     public function configure($parameters = FALSE)
     {
-        if (is_array($parameters))
+        if (is_string($parameters) && file_exists($parameters))
+        {
+            $this->autoconfigure($parameters);
+        }
+        elseif (is_array($parameters))
         {
             foreach ($parameters as $variable => $value)
             {
@@ -167,7 +171,7 @@ $service = new Bitbucket();
 
 // Using some json file to configure
 $service
-    ->autoconfigure('bitbucket-userdata.json')
+    ->autoconfigure('bitbucket-userdata.json') // or just ->configure('filename.json')
     ->simulate('joy')
     ->deploy()
     ->callback('deploy.sh')
