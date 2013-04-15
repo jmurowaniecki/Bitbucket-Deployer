@@ -85,6 +85,7 @@ class Bitbucket
     {
         $this->payload = new stdClass();
         $this->payload->repository = new stdClass();
+
         $this->payload->repository->slug = $repository
             ? $repository
             : $this->repository;
@@ -145,19 +146,40 @@ class Bitbucket
         $this->process_output();
         return $this;
     }
+
+    public function autoconfigure($filename = 'bitbucket-userdata.json')
+    {
+        $config = file_exists($filename)
+            ? json_decode(file_get_contents($filename))
+            : FALSE;
+        foreach ($config as $item => $value)
+        {
+            $this->{$item} = $value;
+        }
+        return $this;
+    }
 }
 
 $service = new Bitbucket();
 
+// Using some json file to configure
 $service
-    ->configure(array(
-        'username'   => 'yourusername',
-        'password'   => 'yourpassword',
-        'branch'     => 'master'
-    ))
+    ->autoconfigure('bitbucket-userdata.json')
+    ->simulate('joy')
     ->deploy()
     ->callback('deploy.sh')
     ->log();
+
+// Standart/manual configuration
+// $service
+//     ->configure(array(
+//         'username'   => 'yourusername',
+//         'password'   => 'yourpassword',
+//         'branch'     => 'master'
+//     ))
+//     ->deploy()
+//     ->callback('deploy.sh')
+//     ->log();
 
 // If you want to test using some repository
 // $service
