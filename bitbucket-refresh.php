@@ -36,7 +36,11 @@ class Bitbucket
 
     public function configure($parameters = FALSE)
     {
-        if (is_array($parameters))
+        if (is_string($parameters) && file_exists($parameters))
+        {
+            $this->autoconfigure($parameters);
+        }
+        elseif (is_array($parameters))
         {
             foreach ($parameters as $variable => $value)
             {
@@ -85,6 +89,7 @@ class Bitbucket
     {
         $this->payload = new stdClass();
         $this->payload->repository = new stdClass();
+
         $this->payload->repository->slug = $repository
             ? $repository
             : $this->repository;
@@ -122,9 +127,12 @@ class Bitbucket
             {
                 $message [] = "exec> $label";
             }
-            $message [] = is_array($desc)
-                ? $this->process_output($desc)
-                : $desc;
+            if ( ! empty($desc))
+            {
+                $message [] = is_array($desc)
+                    ? $this->process_output($desc)
+                    : $desc;
+            }
         }
         $message = implode("\n", $message);
         return $node
@@ -145,19 +153,40 @@ class Bitbucket
         $this->process_output();
         return $this;
     }
+
+    public function autoconfigure($filename = 'bitbucket-userdata.json')
+    {
+        $config = file_exists($filename)
+            ? json_decode(file_get_contents($filename))
+            : FALSE;
+        foreach ($config as $item => $value)
+        {
+            $this->{$item} = $value;
+        }
+        return $this;
+    }
 }
 
 $service = new Bitbucket();
 
+// Using some json file to configure
 $service
-    ->configure(array(
-        'username'   => 'yourusername',
-        'password'   => 'yourpassword',
-        'branch'     => 'master'
-    ))
+    ->autoconfigure('bitbucket-userdata.json') // or just ->configure('filename.json')
+    ->simulate('joy')
     ->deploy()
     ->callback('deploy.sh')
     ->log();
+
+// Standart/manual configuration
+// $service
+//     ->configure(array(
+//         'username'   => 'yourusername',
+//         'password'   => 'yourpassword',
+//         'branch'     => 'master'
+//     ))
+//     ->deploy()
+//     ->callback('deploy.sh')
+//     ->log();
 
 // If you want to test using some repository
 // $service
