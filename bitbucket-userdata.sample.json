@@ -1,0 +1,11 @@
+{
+    "username": "yourusername",
+    "password": "yourpassword",
+    "branch"  : "master",
+    "mail"    : {
+        "emails"  : ["worker@youremail.com", "team@youremail.com"],
+        "from"    : "service@youremail.com",
+        "subject" : "Bitbucket Service",
+        "template": "bitbucket-template.html"
+    }
+}
