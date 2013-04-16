@@ -9,6 +9,7 @@ class Bitbucket
     var $payload    = FALSE;
     var $repository = FALSE;
     var $output     = array();
+    var $mail       = FALSE;
 
     public function __construct($repository = FALSE, $branch = 'master', $payload = FALSE)
     {
@@ -36,6 +37,8 @@ class Bitbucket
 
     public function configure($parameters = FALSE)
     {
+        $this->mail = new stdClass();
+
         if (is_string($parameters) && file_exists($parameters))
         {
             $this->autoconfigure($parameters);
@@ -153,18 +156,12 @@ class Bitbucket
 
     public function mail($emails = FALSE, $subject = FALSE, $from = FALSE, $template = FALSE)
     {
-        $this->mail->to = $emails = $emails
-            ? $emails
-            : $this->mail->to;
-        $this->mail->subject = $subject = $subject
-            ? $subject
-            : $this->mail->subject;
-        $this->mail->from = $from = $from
-            ? $from
-            : $this->mail->from;
-        $this->mail->template = $template = $template
-            ? $template
-            : $this->mail->template;
+        foreach (array('emails', 'subject', 'from', 'template') as $field)
+        {
+            $this->mail->{$field} = $$field = $$field
+                ? $$field
+                : $this->mail->{$field};
+        }
 
         $to = is_array($emails)
             ? implode(', ', $emails)
@@ -186,7 +183,7 @@ class Bitbucket
             {
                 $message = str_replace('{{' . "$field}}", $value, $message);
             }
-            else if (strpos($message, "{{$field}}") && strpos($message, "{{/$field}}"))
+            else if (strpos($message, '{{' . "$field}}") && strpos($message, '{{/' . "$field}}"))
             {
                 $part   = explode('{{' . "$field}}", $message);
                 $block  = explode('{{/' . "$field}}", $part[1]);
@@ -237,8 +234,7 @@ class Bitbucket
 
 $service = new Bitbucket();
 $service
-    ->autoconfigure('bitbucket-userdata.json')
-    ->simulate('joy')
+    ->autoconfigure()
     ->deploy()
     ->callback('deploy.sh')
     ->mail()
