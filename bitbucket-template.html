@@ -1,0 +1,33 @@
+<meta charset="utf8" />
+
+<div style="font-family: 'Trebuchet MS', sans-serif; color: #333;">
+    <h1>Bitbucket Refresh</h1>
+    <p><strong>Date:</strong> {{date}}</p>
+    <p><strong>Repository:</strong> {{repository}}</p>
+
+    <br />
+
+    <table cellpadding="20">
+        <tr style="background: #eee;">
+            <th>Command</th>
+            <th>Output</th>
+        </tr>
+
+        {{commands}}
+        <tr>
+            <td style="border-bottom: 1px solid #ccc;">
+                $ {{command}}
+            </td>
+            <td style="border-bottom: 1px solid #ccc;">
+
+                <code style="font-family: monospace;">{{output}}</code>
+
+            </td>
+        </tr>
+        {{/commands}}
+
+    </table>
+
+    <br />
+
+</div>
