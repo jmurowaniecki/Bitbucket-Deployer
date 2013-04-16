@@ -151,8 +151,21 @@ class Bitbucket
         return $this;
     }
 
-    public function mail($emails = array(), $subject = 'BitBucket Update Service', $from = 'service@bitbucket-refresher', $template = 'bitbucket-template.html')
+    public function mail($emails = FALSE, $subject = FALSE, $from = FALSE, $template = FALSE)
     {
+        $this->mail->to = $emails = $emails
+            ? $emails
+            : $this->mail->to;
+        $this->mail->subject = $subject = $subject
+            ? $subject
+            : $this->mail->subject;
+        $this->mail->from = $from = $from
+            ? $from
+            : $this->mail->from;
+        $this->mail->template = $template = $template
+            ? $template
+            : $this->mail->template;
+
         $to = is_array($emails)
             ? implode(', ', $emails)
             : ( is_string($emails)
@@ -204,7 +217,19 @@ class Bitbucket
             : FALSE;
         foreach ($config as $item => $value)
         {
-            $this->{$item} = $value;
+            if (is_array($value))
+            {
+                $this->{$item} = new stdClass();
+
+                foreach ($value as $sub_item => $sub_val)
+                {
+                    $this->{$item}->{$sub_item} = $sub_val;
+                }
+            }
+            else
+            {
+                $this->{$item} = $value;
+            }
         }
         return $this;
     }
@@ -213,10 +238,9 @@ class Bitbucket
 $service = new Bitbucket();
 $service
     ->autoconfigure('bitbucket-userdata.json')
+    ->simulate('joy')
     ->deploy()
     ->callback('deploy.sh')
-    ->mail(array(
-        'your@email.com'
-    ), 'Repository changes', 'service@somehost', 'bitbucket-template.html')
+    ->mail()
     ->log();
 ?>
