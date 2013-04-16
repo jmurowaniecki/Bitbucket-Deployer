@@ -196,6 +196,9 @@ class Bitbucket
                     $blocks [] = str_replace(array('{{command}}', '{{output}}'), array($command, $output), $block);
                 }
 
+                $blocks = str_replace("\n", "<br />", $blocks);
+                $blocks = preg_replace('/\x1B\[[0-9]*m/s', '', $blocks);
+
                 $message = $part[0] . implode("\n", $blocks) . $part[1];
             }
         }
