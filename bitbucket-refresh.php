@@ -1,15 +1,15 @@
 <?php
 class Bitbucket
 {
-    var $url        = 'bitbucket.org';
-    var $protocol   = 'https://';
-    private $username   = 'yourusername'; # you need to set your username
-    private $password   = 'yourpassword'; # and your password correctly.
-    var $branch     = NULL;
-    var $payload    = FALSE;
-    var $repository = FALSE;
-    var $output     = array();
-    var $mail       = FALSE;
+    var $url          = 'bitbucket.org';
+    var $protocol     = 'https://';
+    private $username = 'yourusername'; # you need to set your username
+    private $password = 'yourpassword'; # and your password correctly.
+    var $branch       = NULL;
+    var $payload      = FALSE;
+    var $repository   = FALSE;
+    var $output       = array();
+    var $mail         = FALSE;
 
     public function __construct($repository = FALSE, $branch = 'master', $payload = FALSE)
     {
@@ -63,7 +63,6 @@ class Bitbucket
                 'message' => 'You\'ve requested and invalid function or posted a malformed data.'
             )), 400, 'Bad Request');
         }
-
         if ( ! is_string($this->repository = $this->payload->repository->slug))
         {
             return $this->send(json_encode(array(
@@ -72,7 +71,6 @@ class Bitbucket
                 'message' => 'Invalid repository.'
             )), 400, 'Bad Request');
         }
-
         $output = shell_exec($action = is_dir("./$this->repository")
             ? "cd $this->repository; git reset --hard HEAD; git pull origin $this->branch"
             : "git clone $this->protocol$this->username:$this->password@$this->url/$this->username/$this->repository");
@@ -90,7 +88,6 @@ class Bitbucket
     {
         $this->payload = new stdClass();
         $this->payload->repository = new stdClass();
-
         $this->payload->repository->slug = $repository
             ? $repository
             : $this->repository;
@@ -116,11 +113,9 @@ class Bitbucket
         $tx = $node
             ? $node
             : $this->output;
-
         $tx = ! is_array($tx)
             ? array($tx)
             : $tx;
-
         foreach ($tx as $label => $desc)
         {
             if ( ! is_numeric($label) )
@@ -162,19 +157,16 @@ class Bitbucket
                 ? $$field
                 : $this->mail->{$field};
         }
-
         $to = is_array($emails)
             ? implode(', ', $emails)
             : ( is_string($emails)
                 ? $emails
                 : FALSE );
-
         $fields = array(
             'date'       => date('H:i:s d/m/Y'),
             'repository' => $this->repository,
             'commands'   => $this->output
         );
-
         $message = $template = file_get_contents($template);
 
         foreach ($fields as $field => $value)
@@ -195,18 +187,14 @@ class Bitbucket
                 {
                     $blocks [] = str_replace(array('{{command}}', '{{output}}'), array($command, $output), $block);
                 }
-
-                $blocks = str_replace("\n", "<br />", $blocks);
-                $blocks = preg_replace('/\x1B\[[0-9]*m/s', '', $blocks);
-
+                $blocks  = str_replace("\n", "<br />", $blocks);
+                $blocks  = preg_replace('/\x1B\[[0-9]*m/s', '', $blocks);
                 $message = $part[0] . implode("\n", $blocks) . $part[1];
             }
         }
-
         mail($to, $subject, $message, "MIME-Version: 1.0\r\n" .
             "Content-type: text/html; charset=utf-8\r\n" .
             "To: $to\r\nFrom: $from\r\n");
-
         return $this;
     }
 
@@ -220,7 +208,6 @@ class Bitbucket
             if (is_array($value))
             {
                 $this->{$item} = new stdClass();
-
                 foreach ($value as $sub_item => $sub_val)
                 {
                     $this->{$item}->{$sub_item} = $sub_val;
