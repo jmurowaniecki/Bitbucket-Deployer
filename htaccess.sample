@@ -1,0 +1,10 @@
+Order Allow,Deny
+Allow from all
+
+<Files bitbucket-userdata.json>
+Deny from all
+</Files>
+
+<Files bitbucket-refresh.log>
+Deny from all
+</Files>
