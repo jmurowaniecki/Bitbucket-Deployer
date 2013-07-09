@@ -12,3 +12,10 @@ At first you should put the bitbucket-refresh.php into the path you need to get 
 You can set it accessing `https://bitbucket.org/{user_name}/{repository_name}/admin/services`.
 
 Make sure that your server will execute evil `exec('rm -Rf /')` functions.. Without this we cannot execute the git client (that must be installed on your server).
+
+
+## Todo
+GitHub deploy with
+- https://github.com/jmurowaniecki/Bitbucket-Deployer/settings/hooks#pushover_minibucket
+- https://help.github.com/articles/post-receive-hooks
+
